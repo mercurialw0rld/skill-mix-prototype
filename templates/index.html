@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkillMix Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+    input, button { padding: 8px; font-size: 14px; }
+    input[type="text"], input[type="number"] { width: 100%; max-width: 420px; }
+    label { display: block; margin: 10px 0 4px; font-weight: 600; }
+    .error { color: #b00020; font-weight: 600; }
+    pre { background: #f6f6f6; padding: 10px; border-radius: 6px; overflow-x: auto; }
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loading-overlay.active { display: flex; }
+    .loading-box {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #d9d9d9;
+      border-top-color: #1f6feb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>Thinking... running SkillMix pipeline.</div>
+    </div>
+  </div>
+
+  <h1>Skill-Mix Demo</h1>
+  <p>Demo implementing the Skill-Mix pipeline.</p>
+
+  <div class="card">
+    <form method="post" action="/run" id="run-form">
+      <label for="topic">Topic</label>
+      <input id="topic" name="topic" type="text" value="beekeeping" />
+
+      <label for="k">Number of skills (1-6)</label>
+      <input id="k" name="k" type="number" value="2" min="1" max="6" />
+
+      <div style="margin-top: 12px;">
+        <button type="submit" id="run-button">Run Demo</button>
+      </div>
+    </form>
+  </div>
+
+  {% if error %}
+  <div class="card error">Error: {{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+  <div class="card">
+    <h2>Result</h2>
+    <p><strong>Topic:</strong> {{ result.title }}</p>
+    <p><strong>Skills:</strong> {{ result.skills }}</p>
+    <p><strong>k:</strong> {{ result.k }}</p>
+  </div>
+
+  <div class="card">
+    <h3>Generated Text</h3>
+    <pre>{{ result.generation }}</pre>
+  </div>
+
+  <div class="card">
+    <h3>Grades</h3>
+    <pre>{{ result.grades }}</pre>
+  </div>
+  {% endif %}
+
+  <script>
+    const form = document.getElementById("run-form");
+    const overlay = document.getElementById("loading-overlay");
+    const runButton = document.getElementById("run-button");
+
+    if (form && overlay && runButton) {
+      form.addEventListener("submit", () => {
+        overlay.classList.add("active");
+        overlay.setAttribute("aria-hidden", "false");
+        runButton.disabled = true;
+        runButton.textContent = "Running...";
+      });
+    }
+  </script>
+</body>
+</html>

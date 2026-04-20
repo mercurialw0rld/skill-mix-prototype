@@ -66,13 +66,35 @@ def get_llm(api_key: str | None = None):
 def fetch_wikipedia(topic: str, sentences: int = 10) -> tuple[str, str]:
     """Fetch a Wikipedia summary for a given topic."""
     print(f"\n[1/4] Fetching Wikipedia article: '{topic}'...")
-    results = wikipedia.search(topic)
-    if not results:
+    search_results = wikipedia.search(topic)
+    if not search_results:
         raise ValueError(f"No Wikipedia results found for '{topic}'")
-    page = wikipedia.summary(results[0], sentences=sentences)
-    title = results[0]
-    print(f"      Found: '{title}' ({len(page.split())} words)")
-    return title, page
+
+    # Try the top search candidates first, then any disambiguation options we discover.
+    candidates: list[str] = [topic, *search_results[:8]]
+    visited: set[str] = set()
+
+    while candidates:
+        candidate = candidates.pop(0)
+        normalized = candidate.strip()
+        if not normalized or normalized.lower() in visited:
+            continue
+        visited.add(normalized.lower())
+
+        try:
+            page = wikipedia.summary(normalized, sentences=sentences, auto_suggest=False)
+            print(f"      Found: '{normalized}' ({len(page.split())} words)")
+            return normalized, page
+        except wikipedia.exceptions.DisambiguationError as exc:
+            for option in exc.options[:10]:
+                if option.lower() not in visited:
+                    candidates.append(option)
+        except wikipedia.exceptions.PageError:
+            continue
+
+    raise ValueError(
+        f"Could not resolve an unambiguous Wikipedia page for '{topic}'. Try a more specific topic."
+    )
 
 
 def extract_skills(llm, title: str, excerpt: str) -> list[dict]:
